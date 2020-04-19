@@ -1,12 +1,9 @@
-module source.app;
-
 import std.stdio;
 import core.time;
 import core.thread;
 import core.stdc.wchar_;
 import core.sys.windows.windows;
 import std.random;
-//import arsd.terminal;
 
 enum nFieldWidth = 12;
 enum nFieldHeight = 18;
