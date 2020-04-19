@@ -48,7 +48,8 @@ void main()
 {
     wchar[nScreenWidth * nScreenHeight] screen;
 
-    foreach(ref c; screen) c = ' ';
+    foreach(ref c; screen)
+		c = ' ';
 
 	auto hConsole = CreateConsoleScreenBuffer(
 		GENERIC_READ | GENERIC_WRITE,
@@ -60,7 +61,7 @@ void main()
 	SetConsoleActiveScreenBuffer(hConsole);
 	uint dwBytesWritten = 0;    
 
-    tetromino[0] = "..X...X...X...X.";
+	tetromino[0] = "..X...X...X...X.";
 	tetromino[1] = "..X..XX...X.....";
 	tetromino[2] = ".....XX..XX.....";
 	tetromino[3] = "..X..XX..X......";
