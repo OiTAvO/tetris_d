@@ -101,7 +101,7 @@ void main()
 
     foreach (int x; 0 .. nFieldWidth)
         foreach (int y; 0 .. nFieldHeight)
-			if ( x == 0 || x == nFieldWidth - 1 || y == nFieldHeight - 1) // borde condition
+			if ( x == 0 || x == nFieldWidth - 1 || y == nFieldHeight - 1) // border condition
             	pField[y * nFieldWidth + x] = 9;  // setting borders of the field
 				
     bool[4] bKey;
