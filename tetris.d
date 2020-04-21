@@ -130,7 +130,7 @@ void main()
 
 		// GAME INPUT
 		foreach (i; 0..4)									//  R	L	D Z
-			bKey[i] = (0x8000 & GetAsyncKeyState(cast(ubyte)("\x27\x25\x28Z"[i]))) != 0;
+			bKey[i] = (0x8000 & GetAsyncKeyState(cast(ubyte)("\x27\x25\x28Z"[i]))) != 0;  // true for pressed key
 
 		// GAME LOGIC
 		nCurrentX += (bKey[0] && doesPieceFit(nCurrentPiece, nCurrentRotation, nCurrentX + 1, nCurrentY)) ? 1 : 0;  // move nCurrentX to right 1 position
