@@ -1,18 +1,46 @@
-import std.stdio;
-import core.time;
-import core.thread;
+module source.app;
+
 import core.stdc.wchar_;
 import core.sys.windows.windows;
+import core.time;
+import core.thread;
 import std.random;
+import std.stdio;
 
+/// represents the Field Width
 enum nFieldWidth = 12;
+/// represents the Field Height
 enum nFieldHeight = 18;
+/// represents the Screen Width
 enum nScreenWidth = 120;
+/// represents the Screen Height
 enum nScreenHeight = 30;
 
-string[7] tetromino;
-char[nFieldWidth * nFieldHeight] pField;
+/// all tetris pieces
+const tetromino = [
+	"..X...X...X...X.",
+	"..X..XX...X.....",
+	".....XX..XX.....",
+	"..X..XX..X......",
+	".X...XX...X.....",
+	".X...X...XX.....",
+	"..X...X..XX....."
+];
 
+/// represents the field, pieces and boundary
+char[nFieldWidth * nFieldHeight] pField = 0;  //init all pField with 0
+
+/**
+	Rotate index position of the piece.
+
+	Params:
+		px = x position of the piece.
+		py = y position of the piece.
+		r = rotation angle.
+
+	Returns:
+		Rotated index position of the piece.
+*/
 int rotate(int px, int py, int r)
 {
     final switch (r % 4)
@@ -24,18 +52,30 @@ int rotate(int px, int py, int r)
     }
 }
 
+/**
+	Checks if the piece fit in position.
+
+	Params:
+		nTetromino = piece index in tetromino.
+		nRotation = rotation angle.
+		nPosX = x position in field.
+		nPosY = y position in field.
+
+	Returns:
+		True if the piece fits in position.
+*/
 bool doesPieceFit(int nTetromino, int nRotation, int nPosX, int nPosY)
 {
     foreach (ref px; 0 .. 4)
         foreach (ref py; 0 .. 4)
         {
-            int pIndex = rotate(px, py, nRotation);
+            const pIndex = rotate(px, py, nRotation);  // index piece
+            const fIndex = (nPosY + py) * nFieldWidth + (nPosX + px);  // index field
 
-            int fIndex = (nPosY + py) * nFieldWidth + (nPosX + px);
-
-            if (((nPosX + px) >= 0 && (nPosX + px) < nFieldWidth) &&
-                ((nPosY + py) >= 0 && (nPosY + py) < nFieldHeight) &&
-                (tetromino[nTetromino][pIndex] != '.' && pField[fIndex] != 0))
+            if (((nPosX + px) >= 0 && (nPosX + px) < nFieldWidth) &&  // collides with lateral boundaries
+                ((nPosY + py) >= 0 && (nPosY + py) < nFieldHeight) &&  // collides at the upper and lower limits	
+                (tetromino[nTetromino][pIndex] == 'X') &&  // it's a piece
+				(pField[fIndex] != 0))  // it's not an empty field space
             {
                 return false;
             }
@@ -46,10 +86,7 @@ bool doesPieceFit(int nTetromino, int nRotation, int nPosX, int nPosY)
 
 void main()
 {
-    wchar[nScreenWidth * nScreenHeight] screen;
-
-    foreach(ref c; screen)
-		c = ' ';
+    wchar[nScreenWidth * nScreenHeight] screen = ' ';  // all screen = ' '
 
 	auto hConsole = CreateConsoleScreenBuffer(
 		GENERIC_READ | GENERIC_WRITE,
@@ -58,33 +95,24 @@ void main()
 		CONSOLE_TEXTMODE_BUFFER,
 		NULL
 	);
+
 	SetConsoleActiveScreenBuffer(hConsole);
 	uint dwBytesWritten = 0;    
 
-	tetromino[0] = "..X...X...X...X.";
-	tetromino[1] = "..X..XX...X.....";
-	tetromino[2] = ".....XX..XX.....";
-	tetromino[3] = "..X..XX..X......";
-	tetromino[4] = ".X...XX...X.....";
-	tetromino[5] = ".X...X...XX.....";
-	tetromino[6] = "..X...X..XX.....";
-
     foreach (int x; 0 .. nFieldWidth)
         foreach (int y; 0 .. nFieldHeight)
-            pField[y * nFieldWidth + x] = (
-				x == 0 || 
-				x == nFieldWidth - 1 || 
-				y == nFieldHeight - 1) ? 9 : 0;
+			if ( x == 0 || x == nFieldWidth - 1 || y == nFieldHeight - 1) // borde condition
+            	pField[y * nFieldWidth + x] = 9;  // setting borders of the field
 				
     bool[4] bKey;
 
 	int nCurrentPiece,
 		nCurrentRotation,
+		nCurrentX = nFieldWidth / 2,
 		nCurrentY,
 		nSpeedCount,
 		nPieceCount,
 		nScore,
-		nCurrentX = nFieldWidth / 2,
 		nSpeed = 20;
 
 	bool bForceDown,
@@ -95,16 +123,19 @@ void main()
 
 	while (!bGameOver)
 	{
-		Thread.sleep( dur!("msecs")( 50 ));
+		// GAME TIMMING
+		Thread.sleep( dur!("msecs")( 50 ));  // Game tick
 		nSpeedCount++;
 		bForceDown = (nSpeedCount == nSpeed);
 
-		foreach (i; 0..4)
+		// GAME INPUT
+		foreach (i; 0..4)									//  R	L	D Z
 			bKey[i] = (0x8000 & GetAsyncKeyState(cast(ubyte)("\x27\x25\x28Z"[i]))) != 0;
 
-		nCurrentX += (bKey[0] && doesPieceFit(nCurrentPiece, nCurrentRotation, nCurrentX + 1, nCurrentY)) ? 1 : 0;
-		nCurrentX -= (bKey[1] && doesPieceFit(nCurrentPiece, nCurrentRotation, nCurrentX - 1, nCurrentY)) ? 1 : 0;		
-		nCurrentY += (bKey[2] && doesPieceFit(nCurrentPiece, nCurrentRotation, nCurrentX, nCurrentY + 1)) ? 1 : 0;
+		// GAME LOGIC
+		nCurrentX += (bKey[0] && doesPieceFit(nCurrentPiece, nCurrentRotation, nCurrentX + 1, nCurrentY)) ? 1 : 0;  // move nCurrentX to right 1 position
+		nCurrentX -= (bKey[1] && doesPieceFit(nCurrentPiece, nCurrentRotation, nCurrentX - 1, nCurrentY)) ? 1 : 0;  // move nCurrentX to left 1 position	
+		nCurrentY += (bKey[2] && doesPieceFit(nCurrentPiece, nCurrentRotation, nCurrentX, nCurrentY + 1)) ? 1 : 0;	// move nCurrentY to down 1 position
 
 		if (bKey[3])
 		{
@@ -161,6 +192,9 @@ void main()
 
 		}
 
+
+		// GAME RENDER
+		// Draw field
 		foreach (x; 0..nFieldWidth)
 			foreach (y; 0..nFieldHeight)
 				screen[(y + 2)*nScreenWidth + (x + 2)] = " ABCDEFG=#"[pField[y*nFieldWidth + x]];
