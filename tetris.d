@@ -113,7 +113,9 @@ void main()
 		nSpeedCount,
 		nPieceCount,
 		nScore,
-		nSpeed = 20;
+		nSpeed = 20,
+		nTotalLines,
+		nNextPiece;
 
 	bool bForceDown,
 		bGameOver,
@@ -121,10 +123,16 @@ void main()
 
 	int[] vLines;
 
+	// Get next piece
+	nCurrentPiece = rndGen.front % 7;
+	rndGen.popFront;
+	nNextPiece = rndGen.front % 7;
+	rndGen.popFront;	
+
 	while (!bGameOver)
 	{
 		// GAME TIMMING
-		Thread.sleep( dur!("msecs")( 50 ));  // Game tick
+		Thread.sleep( 50.msecs );  // Game tick
 		nSpeedCount++;
 		bForceDown = (nSpeedCount == nSpeed);
 
@@ -184,7 +192,8 @@ void main()
 				nCurrentX = nFieldWidth / 2;
 				nCurrentY = int.init;
 				nCurrentRotation = int.init;
-				nCurrentPiece = rndGen.front % 7;
+				nCurrentPiece = nNextPiece;
+				nNextPiece = rndGen.front % 7;
 				rndGen.popFront;
 
 				bGameOver = !doesPieceFit(nCurrentPiece, nCurrentRotation, nCurrentX, nCurrentY);				
@@ -208,12 +217,26 @@ void main()
 		// Draw Score
 		swprintf(&screen[2 * nScreenWidth + nFieldWidth + 6], 16, "SCORE: %8d", nScore);
 
+		// Draw Total Lines
+		swprintf(&screen[4 * nScreenWidth + nFieldWidth + 6], 16, "LINES: %8d", nTotalLines);
+
+		// Draw Next Piece
+		swprintf(&screen[7 * nScreenWidth + nFieldWidth + 6], 16, "NEXT:");
+
+		// Next Piece
+		foreach (px; 0..4)
+			foreach (py; 0..4) 
+				screen[(6 + py) * nScreenWidth + nFieldWidth + px + 16] = 
+				tetromino[nNextPiece][rotate(px, py, 0)] != '.' ? 
+				cast(wchar)(nNextPiece + 65) :
+				' ';
+
 		// Animate Line Completion
 		if (vLines.length != 0)
 		{
 			// Display Frame (cheekily to draw lines)
 			WriteConsoleOutputCharacter(hConsole, screen.ptr, nScreenWidth * nScreenHeight, COORD(0, 0), &dwBytesWritten);
-			Thread.sleep(dur!("msecs")(400)); // Delay a bit
+			Thread.sleep( 400.msecs ); // Delay a bit
 
 			foreach (ref v; vLines)
 				foreach (px; 1..(nFieldWidth - 1))
@@ -223,6 +246,7 @@ void main()
 					pField[px] = 0;
 				}
 
+			nTotalLines += vLines.length;
 			vLines.length = 0;
 		}
 
@@ -232,5 +256,5 @@ void main()
 
 	CloseHandle(hConsole);
 	writeln("Game Over!! Score:", nScore);
-	readln();   
+	readln;   
 }
